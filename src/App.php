@@ -23,7 +23,6 @@ class App
     {
         try {
             echo (View::factory(Config::getInstance()))->boot('error');
-        var_dump($error->getMessage());exit;
         } catch (\Exception $e) {
             echo self::ERR_SYSTEM;
         }
