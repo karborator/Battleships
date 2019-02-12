@@ -102,7 +102,10 @@ class Grid implements GridModelInterface
         }
 
         //Validation
-        $this->validateShoot($coordinates);
+        if (!$this->gridValidator->setData($this->generateGrid())->isValid($coordinates)) {
+            $this->setValidationMessages(implode(PHP_EOL, $this->gridValidator->getErrorMessages()));
+            return;
+        }
 
         //Shoot
         $grid = $this->generateGrid();
@@ -177,13 +180,6 @@ class Grid implements GridModelInterface
             $newRand = $number + 1;
         }
         return $newRand;
-    }
-
-    private function validateShoot($data)
-    {
-        if (!$this->gridValidator->setData($this->generateGrid())->isValid($data)) {
-            throw new \Exception(implode(PHP_EOL, $this->gridValidator->getErrorMessages()));
-        }
     }
 
     private function getSunk(): array

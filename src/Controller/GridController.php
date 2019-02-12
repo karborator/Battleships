@@ -31,7 +31,7 @@ class GridController implements ControllerInterface
     public function index(Request $request): ViewInterface
     {
         if ($request->isPost()) {
-            $this->processIndexPost($request->getPost());
+            $this->gridModel->shoot($this->getCoordinates($request->getPost()));
         }
 
         $viewData = $this->gridModel->getSettings();
@@ -45,15 +45,6 @@ class GridController implements ControllerInterface
         ];
 
         return $this->view->boot('grid', $viewData);
-    }
-
-    private function processIndexPost(array $post)
-    {
-        try {
-            $this->gridModel->shoot($this->getCoordinates($post));
-        } catch (\Exception $e) {
-            $this->gridModel->setValidationMessages($e->getMessage());
-        }
     }
 
     private function getCoordinates(array $post): string
