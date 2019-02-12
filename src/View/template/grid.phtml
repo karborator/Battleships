@@ -1,0 +1,56 @@
+<?php
+
+const SHIP_MARK = 'X';
+
+if (isset($messages)) {
+    foreach ($messages as $message) {
+        echo "<p>$message</p>";
+    }
+}
+if (isset($playAgain) && true === $playAgain) { ?>
+    <a href="/">Play again ?</a>
+<?php } else { ?>
+
+    <pre>
+    <table style='border-collapse: collapse'>
+        <tr>
+            <?php for ($thCol = 0; $thCol <= $height; $thCol++) { ?>
+                <th><?= $numbers[$thCol - 1] ?? null ?></th>
+            <?php } ?>
+        </tr>
+        <?php for ($row = 0; $row < $width; $row++) { ?>
+            <tr>
+                <th style="padding-right: 5px"><?= $letters[$row] ?? null; ?> </th>
+                <?php for ($col = 0; $col <= $height - 1; $col++) { ?>
+                    <td width='20x' height='20px'>
+                        <?php
+                        $currentCoordinates = ($letters[$row] ?? null) . ($numbers[$col] ?? null);
+
+                        if (isset($show) && isset($gridData) && true === $show && isset($gridData[$currentCoordinates])
+                            && SHIP_MARK === $gridData[$currentCoordinates]
+                        ) {
+                            echo SHIP_MARK;
+                            continue;
+                        }
+
+                        if (isset($coordinatesHit[$currentCoordinates])) {
+                            echo $coordinatesHit[$currentCoordinates] ? 'X' : '.';
+                        } elseif (isset($coordinatesMiss[$currentCoordinates])) {
+                            echo $coordinatesMiss[$currentCoordinates] ? '-' : '.';
+                        } else {
+                            echo '.';
+                        }
+                        ?>
+                    </td>
+                <?php } ?>
+            </tr>
+        <?php } ?>
+    </table>
+</pre>
+
+    <form name="input" action="index.php" method="post">
+        Enter coordinates (row, col), e.g. A5 <input type="input" size="5" name="coord" autocomplete="off" autofocus="">
+        <input type="submit">
+    </form>
+
+<?php } ?>
