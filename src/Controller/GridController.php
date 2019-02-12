@@ -51,7 +51,7 @@ class GridController implements ControllerInterface
     {
         $coordinates = $post['coord'] ?? null;
         if (!$coordinates) {
-            throw new \Exception('Required param coord missing');
+            throw new \InvalidArgumentException('Required param coord missing');
         }
         return strtoupper($coordinates);
     }
