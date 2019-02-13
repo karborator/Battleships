@@ -15,16 +15,23 @@ class App
             session_start(Config::getInstance()->get('session') ?? []);
             echo GridController::factory(Config::getInstance())->index(Request::getInstance());
         } catch (\Throwable $e) {
-            self::displayError($e);
+            self::log($e);
+            self::displayError();
         }
     }
 
-    private static function displayError(\Throwable $error)
+    private static function displayError()
     {
         try {
             echo (View::factory(Config::getInstance()))->boot('error');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            self::log($e);
             echo self::ERR_SYSTEM;
         }
+    }
+
+    private static function log(\Throwable $e)
+    {
+        syslog(LOG_ERR, $e->getMessage());
     }
 }
