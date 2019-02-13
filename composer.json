@@ -18,15 +18,9 @@
     "psr-4": {
       "Battleships\\": "src/",
       "Tests\\": "tests/"
-    },
-    "files": [
-
-    ]
+    }
   },
   "scripts": {
-    "cs-check": "phpcs",
-    "cs-fix": "phpcbf",
-    "serve": "php -S 0.0.0.0:8080 -t public/ public/index.php",
-    "test": "phpunit"
+    "serve": "php -S 127.0.0.1:8000 -t public"
   }
 }
