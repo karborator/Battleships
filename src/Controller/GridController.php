@@ -2,7 +2,7 @@
 
 namespace Battleships\Controller;
 
-use Battleships\Config;
+use Battleships\ConfigInterface;
 use Battleships\Model\Grid;
 use Battleships\Model\GridModelInterface;
 use Battleships\Request;
@@ -20,7 +20,7 @@ class GridController implements ControllerInterface
         $this->view = $view;
     }
 
-    public static function factory(Config $config): self
+    public static function factory(ConfigInterface $config): self
     {
         return new GridController(
             Grid::factory(),
