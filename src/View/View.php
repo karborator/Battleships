@@ -2,7 +2,7 @@
 
 namespace Battleships\View;
 
-use Battleships\Config;
+use Battleships\ConfigInterface;
 
 class View implements ViewInterface
 {
@@ -20,7 +20,7 @@ class View implements ViewInterface
         $this->viewPath = $viewPath;
     }
 
-    public static function factory(Config $config)
+    public static function factory(ConfigInterface $config)
     {
         $viewType = $config->get('viewType') ?? View::VIEW_TYPE;
         $viewPath = $config->get('viewPath') ?? View::VIEW_PATH;
@@ -50,7 +50,7 @@ class View implements ViewInterface
     {
         $file = $this->viewPath . $templateName . '.' . $this->viewType;
         if (!file_exists($file) || !is_readable($file)) {
-            throw new ViewException('Template not found or not readable!');
+            throw ViewFailed::templateNotFound();
         }
 
         return $file;

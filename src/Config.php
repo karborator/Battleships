@@ -16,7 +16,7 @@ class Config implements ConfigInterface
     {
         $this->confDir = realpath($confDir);
         if (!is_readable($this->confDir) || !is_dir($this->confDir)) {
-            throw new ConfigException('Config error, bad directory given.');
+            throw ConfigFailed::badDirectory();
         }
 
         $this->parseConfig();
