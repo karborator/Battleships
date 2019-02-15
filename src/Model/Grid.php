@@ -95,15 +95,7 @@ class Grid implements GridModelInterface
 
     public function shoot(string $coordinates)
     {
-        //Commands
-        if (self::COMMAND_SHOW === strtolower($coordinates)) {
-            $this->shootMessages['show'] = true;
-            return;
-        }
-
-        //Validation
-        if (!$this->gridValidator->setData($this->generateGrid())->isValid($coordinates)) {
-            $this->setValidationMessages(implode(PHP_EOL, $this->gridValidator->getErrorMessages()));
+        if (!$this->handlePreShoot($coordinates)) {
             return;
         }
 
@@ -122,19 +114,7 @@ class Grid implements GridModelInterface
             $this->cache->set('coordinatesMiss', $coordinatesMiss);
         }
 
-        //Check ship is sunk message
-        list($shipSunk, $totalSquaresToWin) = $this->getShipSunkAndTotalSquaresToWin($coordinates);
-        if ($shipSunk) {
-            $this->shootMessages['messages'] = [self::SHOOT_MSG_SUNK];
-            $this->cleanSunk();
-        }
-        //Check player win
-        if ((null !== $totalSquaresToWin) && ($totalSquaresToWin === count($this->getCoordinatesHit()))) {
-            $this->shootMessages['messages'] = [sprintf(self::SHOOT_MSG_WELL_DONE, $this->calculateTotalHits())];
-
-            session_destroy();
-            $this->cache->set('playAgain', true);
-        }
+        $this->handlePostShoot($coordinates);
     }
 
     public function getPlayAgain(): bool
@@ -250,46 +230,132 @@ class Grid implements GridModelInterface
         $gridCopy = $grid;
         $counter = $ship::getSquares();
         for ($i = 1; $i <= $counter; $i++) {
-            if (!isset($gridCopy[$letter . $number])) {
-
-                $letter = chr(ord($letter) - $ship::getSquares());
-                if (isset($grid[$letter . $number])) {
-                    return $this->generateShip($ship, $grid, $letter, $number);
-                }
-
-                $letter = chr(ord($letter) + $ship::getSquares());
-                if (isset($grid[$letter . $number])) {
-                    return $this->generateShip($ship, $grid, $letter, $number);
-                }
-
-                $letter = chr(ord($letter) + $this->getRandomInt(0));
-                $number--;
-                return $this->generateShip($ship, $grid, $letter, $number);
+            $result = $this->handleCoordinatesOutOfGrid($grid, $gridCopy, $ship, $letter, $number);
+            if ($result) {
+                return $result;
             }
 
-            if ($ship::getChar() === $gridCopy[$letter . $number]) {
-                $letter++;
-                $number++;
-                $counter++;
+            if ($this->handleTakenPosition($ship, $gridCopy, $letter, $number, $counter)) {
                 continue;
             }
 
             if (!isset($onePositionBack)) {
                 $onePositionBack = $gridCopy[chr(ord($letter) - 1) . $number] ?? null;
-                $nextPositionAfterShip = $gridCopy[chr(ord($letter) + $ship::getSquares()) . $number] ?? null;
-                if (($onePositionBack && $ship::getChar() === $onePositionBack)
-                    || ($nextPositionAfterShip && $ship::getChar() === $nextPositionAfterShip)
-                ) {
-                    $letter++;
-                    $number++;
-                    return $this->generateShip($ship, $grid, $letter, $number);
+                $result = $this->handlePositionAroundShip($gridCopy, $grid, $ship, $letter, $number, $onePositionBack);
+                if ($result) {
+                    return $result;
                 }
             }
+
 
             $gridCopy[$letter . $number] = (string)$ship;
             $letter++;
         }
 
         return $gridCopy;
+    }
+
+    private function handlePreShoot(string $coordinates): bool
+    {
+        //Commands
+        if (self::COMMAND_SHOW === strtolower($coordinates)) {
+            $this->shootMessages['show'] = true;
+            return false;
+        }
+
+        //Validation
+        if (!$this->gridValidator->setData($this->generateGrid())->isValid($coordinates)) {
+            $this->setValidationMessages(implode(PHP_EOL, $this->gridValidator->getErrorMessages()));
+            return false;
+        }
+
+        return true;
+    }
+
+    private function handlePostShoot(string $coordinates)
+    {
+        $totalSquaresToWin = $this->handleShipSunk($coordinates);
+        $this->handlePlayerWin($totalSquaresToWin);
+    }
+
+    private function handleShipSunk(string $coordinates): int
+    {
+        list($shipSunk, $totalSquaresToWin) = $this->getShipSunkAndTotalSquaresToWin($coordinates);
+        if ($shipSunk) {
+            $this->shootMessages['messages'] = [self::SHOOT_MSG_SUNK];
+            $this->cleanSunk();
+        }
+        return $totalSquaresToWin;
+    }
+
+    private function handlePlayerWin(int $totalSquaresToWin): void
+    {
+        if ((null !== $totalSquaresToWin) && ($totalSquaresToWin === count($this->getCoordinatesHit()))) {
+            $this->shootMessages['messages'] = [sprintf(self::SHOOT_MSG_WELL_DONE, $this->calculateTotalHits())];
+
+            $this->cache->clear();
+            $this->cache->set('playAgain', true);
+        }
+    }
+
+    private function handleCoordinatesOutOfGrid(
+        array $grid,
+        array $gridCopy,
+        ShipEntityInterface $ship,
+        string $letter,
+        int $number
+    ) {
+        if (isset($gridCopy[$letter . $number])) {
+            return;
+        }
+
+        $letter = chr(ord($letter) - $ship::getSquares());
+        if (isset($grid[$letter . $number])) {
+            return $this->generateShip($ship, $grid, $letter, $number);
+        }
+
+        $letter = chr(ord($letter) + $ship::getSquares());
+        if (isset($grid[$letter . $number])) {
+            return $this->generateShip($ship, $grid, $letter, $number);
+        }
+
+        $letter = chr(ord($letter) + $this->getRandomInt(0));
+        $number--;
+        return $this->generateShip($ship, $grid, $letter, $number);
+    }
+
+    private function handlePositionAroundShip(
+        array $gridCopy,
+        array $grid,
+        ShipEntityInterface $ship,
+        string $letter,
+        int $number,
+        $onePositionBack
+    ) {
+        $nextPositionAfterShip = $gridCopy[chr(ord($letter) + $ship::getSquares()) . $number] ?? null;
+        if (($onePositionBack && $ship::getChar() === $onePositionBack)
+            || ($nextPositionAfterShip && $ship::getChar() === $nextPositionAfterShip)
+        ) {
+            $letter++;
+            $number++;
+            return $this->generateShip($ship, $grid, $letter, $number);
+        }
+    }
+
+    private function handleTakenPosition(
+        ShipEntityInterface $ship,
+        array $gridCopy,
+        string &$letter,
+        int &$number,
+        int &$counter
+    ) {
+        if ($ship::getChar() === $gridCopy[$letter . $number]) {
+            $letter++;
+            $number++;
+            $counter++;
+            return true;
+        }
+
+        return false;
     }
 }
