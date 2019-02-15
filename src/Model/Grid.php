@@ -240,7 +240,6 @@ class Grid implements GridModelInterface
             }
 
             if (!isset($onePositionBack)) {
-                $onePositionBack = $gridCopy[chr(ord($letter) - 1) . $number] ?? null;
                 $result = $this->handlePositionAroundShip($gridCopy, $grid, $ship, $letter, $number, $onePositionBack);
                 if ($result) {
                     return $result;
@@ -330,8 +329,9 @@ class Grid implements GridModelInterface
         ShipEntityInterface $ship,
         string $letter,
         int $number,
-        $onePositionBack
+        &$onePositionBack
     ) {
+        $onePositionBack = $gridCopy[chr(ord($letter) - 1) . $number] ?? null;
         $nextPositionAfterShip = $gridCopy[chr(ord($letter) + $ship::getSquares()) . $number] ?? null;
         if (($onePositionBack && $ship::getChar() === $onePositionBack)
             || ($nextPositionAfterShip && $ship::getChar() === $nextPositionAfterShip)
